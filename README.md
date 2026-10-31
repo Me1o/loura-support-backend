@@ -18,4 +18,13 @@ also, there is a retry endpoint actions that fetches and reruns failed tickets. 
 **background jobs concurrency**
 by leaving this to it's default value of 1, i am underutilizing background jobs. best things about jobs that run independently away from the main thread is the ability to have many running at the same time. but i had to keep it like this to accommodate the LLM api limit. (using a free version of Gemeni).
 
+
+**Defending against prompt injection**
+this is a hard one to completely strike off, unlike sql injection there is no keywords to watch out for in prompt injection. every word could be a threat. 
+i have added rules to the system prompt instructing the model to deal with the user-inputted part of the prompt (ticket subject and body) strictly as data and ignore all instructions if any. i have also wrapped that part in an `<UNTRUSTED>`  tag.
+
+**Dealing with LLM uncertainty**
+models are notoriously unreliable (compared to functions) and so the output must be vetted and validated before usage. i have provided the model with an output format (JSON), a structure (`{category: string, priority: string, summery: string}`) and an example to follow. i also prompted it to be strict about those. 
+but this is not remotely enough. i have also created a response class and passed the response text to it for validation and added a fallback if the model fails to produce a value that is within the expected range.
+
   
