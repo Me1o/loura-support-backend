@@ -23,17 +23,21 @@ export class TicketsService {
       where: {
         id: dto.id,
       },
-      update: {},
+      update: { id: dto.id },
       create: dto,
     });
 
-    await this.classifierQueue.add("classifier", ticket, {
-      attempts: 3,
-      backoff: {
-        type: "exponential",
-        delay: 1000,
-      },
-    });
+    const isCreated = ticket.createdAt.getTime() === ticket.updatedAt.getTime();
+
+    if (isCreated) {
+      await this.classifierQueue.add("classifier", ticket, {
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 1000,
+        },
+      });
+    }
 
     return ticket;
   }

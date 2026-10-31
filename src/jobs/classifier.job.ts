@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { OnWorkerEvent, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
 import { GoogleGenAI } from "@google/genai";
 import { TicketStatus, type Ticket } from "../tickets/models/ticket";
@@ -45,6 +45,20 @@ export class ClassifierProcessor extends WorkerHost {
           category: responseObject.category,
           priority: responseObject.priority,
           status: TicketStatus.CLASSIFIED,
+        },
+      });
+    }
+  }
+
+  @OnWorkerEvent("failed")
+  async onJobFailed(job: Job, error: Error) {
+    const ticket = job.data as Ticket;
+    const attempts = job.opts.attempts || 1;
+    if (job.attemptsMade >= attempts) {
+      await this.prisma.ticket.update({
+        where: { id: ticket.id },
+        data: {
+          status: TicketStatus.FAILED,
         },
       });
     }
