@@ -1,0 +1,37 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TicketCategory {
+  billing
+  technical
+  account
+  other
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+}
+
+model Ticket {
+  id        String          @id
+  subject   String
+  body      String
+  category  TicketCategory?
+  priority  TicketPriority?
+  summary   String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([category])
+  @@index([priority])
+  @@map("tickets")
+}
