@@ -21,6 +21,12 @@ enum TicketPriority {
   high
 }
 
+enum TicketStatus {
+  pending
+  classified
+  failed
+}
+
 model Ticket {
   id        String          @id
   subject   String
@@ -28,6 +34,7 @@ model Ticket {
   category  TicketCategory?
   priority  TicketPriority?
   summary   String?
+  status    TicketStatus    @default(pending)
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 

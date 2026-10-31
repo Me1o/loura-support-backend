@@ -5,7 +5,7 @@ export interface Ticket {
   category: TicketCategory | undefined;
   priority: TicketPriority | undefined;
   summary: string | undefined;
-  created_at: string;
+  status: TicketStatus;
 }
 
 export enum TicketCategory {
@@ -19,4 +19,10 @@ export enum TicketPriority {
   LOW = "low",
   MEDIUM = "medium",
   HIGH = "high",
+}
+
+export enum TicketStatus {
+  PENDING = "pending",
+  CLASSIFIED = "classified",
+  FAILED = "failed",
 }

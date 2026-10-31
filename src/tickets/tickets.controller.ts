@@ -28,7 +28,7 @@ export class TicketsController {
     description: "Returns a paginated, filtered list of tickets",
   })
   async list(
-    @Query() filters: TicketsFilterDto
+    @Query() filters: TicketsFilterDto,
   ): Promise<PaginatedListResponse<ListTicketDto>> {
     return await this.service.list(filters);
   }

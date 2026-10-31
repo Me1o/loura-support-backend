@@ -8,15 +8,34 @@ import type { GetTicketDto } from "./models/dtos/get-ticket.dto";
 import type { ListTicketDto } from "./models/dtos/list-ticket.dto";
 import { TicketCategory, TicketPriority } from "./models/ticket";
 import { TicketsDetailsFilterDto } from "./models/dtos/filter-tickets-details.dto";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
 
 @Injectable()
 export class TicketsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectQueue("classifier") private classifierQueue: Queue
+  ) {}
 
   async create(dto: CreateTicketDto) {
-    return await this.prisma.ticket.create({
-      data: dto,
+    const ticket = await this.prisma.ticket.upsert({
+      where: {
+        id: dto.id,
+      },
+      update: {},
+      create: dto,
     });
+
+    await this.classifierQueue.add("classifier", ticket, {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 1000,
+      },
+    });
+
+    return ticket;
   }
 
   async list(
