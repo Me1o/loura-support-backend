@@ -79,7 +79,7 @@ class LLMesponse {
 
     if (
       Object.values(TicketCategory).includes(
-        plainObject.category as TicketCategory
+        plainObject.category as TicketCategory,
       )
     )
       this.category = plainObject.category as TicketCategory;
@@ -87,7 +87,7 @@ class LLMesponse {
 
     if (
       Object.values(TicketPriority).includes(
-        plainObject.priority as TicketPriority
+        plainObject.priority as TicketPriority,
       )
     )
       this.priority = plainObject.priority as TicketPriority;

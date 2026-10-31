@@ -1,4 +1,5 @@
 import { getQueueToken } from "@nestjs/bullmq";
+import { ConfigService } from "@nestjs/config";
 import { Test, TestingModule } from "@nestjs/testing";
 import { PrismaService } from "../prisma/prisma.service";
 import { TicketsService } from "./tickets.service";
@@ -10,6 +11,7 @@ describe("TicketsService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TicketsService,
+        { provide: ConfigService, useValue: {} },
         { provide: PrismaService, useValue: {} },
         { provide: getQueueToken("classifier"), useValue: {} },
       ],

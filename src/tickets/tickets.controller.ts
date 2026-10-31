@@ -41,4 +41,13 @@ export class TicketsController {
   async get(@Query() filter: TicketsDetailsFilterDto): Promise<GetTicketDto> {
     return await this.service.get(filter);
   }
+
+  @Post("retry_failed_classifications")
+  @ApiOperation({ summary: "classification retry" })
+  @ApiOkResponse({
+    description: "retries the classification job for failed tickets",
+  })
+  async retryFailedClassificationJobs() {
+    return await this.service.retryFailedClassificationJobs();
+  }
 }

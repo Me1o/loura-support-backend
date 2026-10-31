@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import type { Prisma } from "../generated/prisma/client";
+import { TicketStatus, type Prisma } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import type { PaginatedListResponse } from "../shared/models/dtos/paginatedListResponse.dto";
 import type { CreateTicketDto } from "./models/dtos/create-ticket.dto";
@@ -10,10 +10,12 @@ import { TicketCategory, TicketPriority } from "./models/ticket";
 import { TicketsDetailsFilterDto } from "./models/dtos/filter-tickets-details.dto";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class TicketsService {
   constructor(
+    private configService: ConfigService,
     private readonly prisma: PrismaService,
     @InjectQueue("classifier") private classifierQueue: Queue
   ) {}
@@ -58,7 +60,7 @@ export class TicketsService {
         where,
         skip: filters.skip,
         take: filters.take,
-        orderBy: { createdAt: filters.sort ?? "desc" },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.ticket.count({ where }),
     ]);
@@ -93,5 +95,51 @@ export class TicketsService {
       priority: ticket.priority as TicketPriority | null,
       summary: ticket.summary,
     };
+  }
+
+  async retryFailedClassificationJobs(): Promise<void> {
+    const parsedLimit = parseInt(
+      this.configService.get<string>("RETRY_SIZE_LIMIT") ?? "5",
+      5
+    );
+    const retryLimit =
+      Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 1;
+
+    const where: Prisma.TicketWhereInput = { status: TicketStatus.failed };
+
+    const tickets = await this.prisma.ticket.findMany({
+      where,
+      take: retryLimit,
+    });
+
+    if (tickets.length === 0) {
+      return;
+    }
+
+    const pendingTickets = tickets.map((ticket) => ({
+      ...ticket,
+      status: TicketStatus.pending,
+    }));
+
+    await this.prisma.$transaction(
+      pendingTickets.map((ticket) =>
+        this.prisma.ticket.update({
+          where: { id: ticket.id },
+          data: { status: TicketStatus.pending },
+        })
+      )
+    );
+
+    await Promise.all(
+      pendingTickets.map((ticket) =>
+        this.classifierQueue.add("classifier", ticket, {
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 1000,
+          },
+        })
+      )
+    );
   }
 }
