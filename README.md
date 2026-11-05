@@ -1,4 +1,4 @@
-# Loura support tickets classifier 
+# support tickets classifier 
 
 that was fun! lets me break it down. but first things first, how to ***run*** it. 
 
